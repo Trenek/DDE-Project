@@ -1,0 +1,3 @@
+[submodule "Mackey-Glass/dependencies/CAPD"]
+	path = Mackey-Glass/dependencies/CAPD
+	url = https://github.com/Trenek/CAPD
