@@ -1,0 +1,10 @@
+# python
+venv/
+__pycache__/
+
+# compiled binary
+cubeIkeda
+
+# ignore generated files in output folder
+output/*.csv
+output/*.png
