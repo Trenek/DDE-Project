@@ -67,20 +67,17 @@ int main() {
   DOdeSolver solver(CubicIkeda, taylorOrder);
   DTimeMap timeMap(solver);
 
+  // eventually will change to plot it using gnuplot,
+  // for now it save it in a file and plots in python script
   DTimeMap::SolutionCurve solution =
       getSolutionCurve(timeMap, x, 500., 0., filenameSolutionCurve);
 
-  // intersects near (0,0) for a = 1.57 and higher
-  //     DCoordinateSection section(N + 1, 0);
-  //     DPoincareMap pm(solver, section, poincare::MinusPlus);
-  //     getPoincareValues(pm, x, returnTime, filenamePoincare);
-
   double aStart = 1.35;
-  double aEnd = 1.57;
+  double aEnd = 1.56;
   double aIncrease = 0.0005;
   double noSteps = 1000;
 
-  DCoordinateSection section(N + 1, 0, -0.1);
+  DCoordinateSection section(N + 1, 0, 0);
   DPoincareMap pm(solver, section, poincare::MinusPlus);
 
   getPoincareValues(pm, x, filenamePoincare);
