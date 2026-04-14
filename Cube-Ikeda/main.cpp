@@ -39,7 +39,7 @@ void approx_CubicIkeda(capd ::autodiff ::Node /*t*/, // unused time variable
   }
 }
 
-// MAIN FUNCTION //
+// MAIN FUNCTION // ---------------------------------------------------------------------
 
 int main() {
   int N = 6;
@@ -62,32 +62,36 @@ int main() {
 
   DOdeSolver solver(CubicIkeda, taylorOrder);
   DTimeMap timeMap(solver);
-
-  /// atractor for starting x:
+  
+  /* plotting atractor for starting point x: */ 
   DVector x(N + 1);
   for (int i = 0; i <= N; i++)
     x[i] = 0.5;
-  cout << "attractor starting point: " << x << endl;
+
   // eventually will change to plot it using gnuplot,
-  // for now it save it in a file and plots in python script
+  // for now it saves data in a file and plots in python script
   DTimeMap::SolutionCurve solution =
       getSolutionCurve(timeMap, x, 500., 0., filenameSolutionCurve);
 
+  /* defining Poincare map */    
+  DCoordinateSection section(N + 1, 0, 0);
+  DPoincareMap pm(solver, section, poincare::MinusPlus);
+  
+  /* values for bifurcation diagram */
   double aStart = 1.5;
   double aEnd = 1.56;
   double aFrequency = 1000;
   double noSteps = 1000;
 
-  DCoordinateSection section(N + 1, 0, 0);
-  DPoincareMap pm(solver, section, poincare::MinusPlus);
+  // getPoincareValues(pm, x, filenamePoincare);  // saves a few values for ensuring the section is correct
 
-  // getPoincareValues(pm, x, filenamePoincare);
 
+  /* plots bifurcation diagram: will take a while :) */
   // plotBifurcationDiagram(CubicIkeda, pm, x, aStart, aEnd, aFrequency, noSteps,
   //                        filenameBifurc);
 
 
-  /// searching for stationary point for lower papameter a
+  /* searching for stationary point for lower papameter a */
   CubicIkeda.setParameters({1.5});
 
   DVector start(N+1);
@@ -101,8 +105,8 @@ int main() {
   cout << setprecision(10) << "difference betweeen found x0 and P(x0):\n" << stationaryPoint - pm(stationaryPoint) << endl;
 
   
-  /// searching for stationary point after bifurcation
-  CubicIkeda.setParameters({1.54});
+  /* searching for stationary point after bifurcation */
+  CubicIkeda.setParameters({1.535});
 
   DVector newStatPoint = getZero(pm, stationaryPoint, 100);
   cout << setprecision(10) << "difference betweeen found x1 and P(x1):\n" << newStatPoint - pm(newStatPoint) << endl;
