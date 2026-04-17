@@ -12,7 +12,7 @@ int main() {
     class gnuPlotManager manager{{
         {
             .name = "Trajektoria",
-            .file = "data.dat",
+            .file = "traj.dat",
 
             .xName = "x0",
             .yName = "xN"
@@ -35,7 +35,7 @@ int main() {
 
     long double t = 0.0;
 
-    manager.print(0, "{} {}\n", u[N / 2], u[N]);
+    manager.print(0, "{} {}\n", u[0], u[N]);
     manager.fflush();
 
     std::signal(SIGINT, signal_handler);

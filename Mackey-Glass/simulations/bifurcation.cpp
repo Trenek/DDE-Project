@@ -43,7 +43,7 @@ int main() {
     manager.fflush();
 
     while (n <= 9) {
-        temp = timeMap(100, temp);
+        temp = timeMap(100, u);
 
         for (int i = 0; i < 200; i++) {
             temp = map(temp);
