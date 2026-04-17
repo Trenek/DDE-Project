@@ -2,53 +2,54 @@
 
 #include "draw.hpp"
 
-static void setGNUPlot(int id, struct thing thing) {
-    fprintf(thing.fileDesc, "set term qt %d size 800,600\n", id);
-    fprintf(thing.fileDesc, "set title '%s'\n", thing.name);
-    fprintf(thing.fileDesc, "set xlabel '%s'\n", thing.xName);
-    fprintf(thing.fileDesc, "set ylabel '%s'\n", thing.yName);
-    fprintf(thing.fileDesc, "set grid\n");
+static void setGNUPlot(int id, struct thing &drawer) {
+    fprintf(drawer.gnuplot, "set term qt %d size 800,600\n", id);
+    fprintf(drawer.gnuplot, "set title '%s'\n", drawer.name);
+    fprintf(drawer.gnuplot, "set xlabel '%s'\n", drawer.xName);
+    fprintf(drawer.gnuplot, "set ylabel '%s'\n", drawer.yName);
+    fprintf(drawer.gnuplot, "set pointsize 1.5\n");
+    fprintf(drawer.gnuplot, "set grid\n");
 
-    fprintf(thing.fileDesc, "pause 1\n");
-    fprintf(thing.fileDesc, "plot \"%s\" with lines\n", thing.file);
-    fprintf(thing.fileDesc, "while (1) {\n");
-    fprintf(thing.fileDesc, "    pause 1\n");
-    fprintf(thing.fileDesc, "    replot\n");
-    fprintf(thing.fileDesc, "}\n");
-    fflush(thing.fileDesc);
+    fprintf(drawer.gnuplot, "pause 1\n");
+    fprintf(drawer.gnuplot, "plot \"%s\" with dots lc rgb '#000000' notitle\n", drawer.file);
+    fprintf(drawer.gnuplot, "bind 'q' 'exit'\n");
+    fprintf(drawer.gnuplot, "while (1) {\n");
+    fprintf(drawer.gnuplot, "    pause 1\n");
+    fprintf(drawer.gnuplot, "    replot\n");
+    fprintf(drawer.gnuplot, "}\n");
+    fflush(drawer.gnuplot);
 }
 
-static void cleanup(std::vector<struct thing> thing) {
-    for (size_t i = 0; i < thing.size(); i += 1) {
-        std::remove(thing[i].file);
+void gnuPlotManager::fflush() {
+    for (const auto &drawer : this->drawers) {
+        std::fflush(drawer.dataFile);
     }
+}
+
+void gnuPlotManager::removeData() {
+    for (const auto &drawer : this->drawers) {
+        std::remove(drawer.file);
+    }
+}
+
+gnuPlotManager::gnuPlotManager(std::vector<struct thing> &&array) : drawers(std::move(array)) {
+    size_t id = 0;
+
+    removeData();
+
     sleep(4);
-}
 
-static void createPlot(std::vector<struct thing> thing) {
-    for (size_t i = 0; i < thing.size(); i += 1) {
-        thing[i].fileDesc = popen("gnuplot", "w");
+    for (auto &drawer : this->drawers) {
+        drawer.dataFile = fopen(drawer.file, "w");
+        drawer.gnuplot = popen("gnuplot", "w");
 
-        setGNUPlot(i, thing[i]);
+        setGNUPlot(id++, drawer);
     }
-};
-
-static void destroyPlot(std::vector<struct thing> thing) {
-    for (size_t i = 0; i < thing.size(); i += 1) {
-        fclose(thing[i].fileDesc);
-    }
-}
-
-gnuPlotManager::gnuPlotManager(std::vector<struct thing> &&array) : array(std::move(array)) {
-    cleanup(this->array);
-
-    for (size_t i = 0; i < this->array.size(); i += 1) {
-        this->array[i].fileDesc = fopen(this->array[i].file, "w");
-    }
-
-    createPlot(this->array);
 }
 
 gnuPlotManager::~gnuPlotManager() {
-    destroyPlot(this->array);
+    for (auto &drawer : this->drawers) {
+        fclose(drawer.dataFile);
+        pclose(drawer.gnuplot);
+    }
 }
