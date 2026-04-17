@@ -16,7 +16,7 @@ int main() {
         }
     }};
 
-    constexpr uint32_t order = 200;
+    constexpr uint32_t order = 20;
     long double n = 8.7;
     capd::LDMap f{mackeyGlass, N + 1, N + 1, 1}; {
         f.setParameter(0, n);
@@ -51,7 +51,7 @@ int main() {
             manager.print(0, "{} {}\n", n, temp[N]);
         }
 
-        n += 0.001;
+        n += 0.0001;
         f.setParameter(0, n);
     }
 
