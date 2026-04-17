@@ -7,4 +7,4 @@
 `cmake --build build --target all`
 
 ## Uruchom program
-Po kompilacji plik wykonywalny znajduje się w folderze `build`
+Po kompilacji plik wykonywalny znajduje się w folderze `build/simulations`
