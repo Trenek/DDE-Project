@@ -24,8 +24,7 @@ int main() {
     capd::LDOdeSolver solver{f, order}; {
         solver.setStep(0.1);
     }
-    capd::LDCoordinateSection section{N + 1, 0, 0.6}; 
-    // alternatywa - capd::LDAffineSection
+    capd::LDCoordinateSection section{N + 1, 0, 0.6}; // alternatywa - capd::LDAffineSection
     capd::LDPoincareMap map{solver, section, capd::poincare::MinusPlus};
     capd::LDTimeMap timeMap{solver};
 
@@ -40,7 +39,7 @@ int main() {
     manager.print(0, "{} {}\n", n, temp[N]);
     manager.fflush();
 
-    // Stała Feigenbauma
+    // Stała Feigenbauma, (Golden Ratio + Feigenbaum Constant) / 2 = pi
     while (n <= 9) {
         temp = timeMap(100, u);
 
