@@ -25,4 +25,5 @@ public:
 
     void fflush();
     void removeData();
+    void initGNUPlot();
 };

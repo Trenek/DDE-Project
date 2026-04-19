@@ -32,9 +32,20 @@ void gnuPlotManager::removeData() {
     }
 }
 
-gnuPlotManager::gnuPlotManager(std::vector<struct thing> &&array) : drawers(std::move(array)) {
+void gnuPlotManager::initGNUPlot() {
+    static bool isEnabled = false;
     size_t id = 0;
 
+    if (isEnabled == false) {
+        for (auto &drawer : this->drawers) {
+            setGNUPlot(id++, drawer);
+        }
+    }
+
+    isEnabled = true;
+}
+
+gnuPlotManager::gnuPlotManager(std::vector<struct thing> &&array) : drawers(std::move(array)) {
     removeData();
 
     sleep(4);
@@ -42,9 +53,9 @@ gnuPlotManager::gnuPlotManager(std::vector<struct thing> &&array) : drawers(std:
     for (auto &drawer : this->drawers) {
         drawer.dataFile = fopen(drawer.file, "w");
         drawer.gnuplot = popen("gnuplot", "w");
-
-        setGNUPlot(id++, drawer);
     }
+
+    initGNUPlot();
 }
 
 gnuPlotManager::~gnuPlotManager() {
