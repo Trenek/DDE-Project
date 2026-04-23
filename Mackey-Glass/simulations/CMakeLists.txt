@@ -15,3 +15,9 @@ add_executable(Newton
     "${CMAKE_CURRENT_SOURCE_DIR}/newton.cpp"
 )
 target_link_libraries(Newton Common)
+
+project(CoveringRelation LANGUAGES CXX)
+add_executable(CoveringRelation
+    "${CMAKE_CURRENT_SOURCE_DIR}/coveringRelation.cpp"
+)
+target_link_libraries(CoveringRelation Common)
