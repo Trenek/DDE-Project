@@ -17,9 +17,12 @@ static void setGNUPlot(int id, struct thing &drawer) {
 
     fprintf(drawer.gnuplot, "plot "
             "\"%s\" index 0 with lines lw 2 lc rgb 'orange' title 'X', "
-            "\"%s\" index 1 with lines lw 2 lc rgb 'cyan' title 'f^-1(X) Min', "
-            "\"%s\" index 2 with lines lw 2 lc rgb 'red' title 'f^-1(X) Max'\n",
-    drawer.file, drawer.file, drawer.file);
+            "\"%s\" index 1 with lines lw 2 lc rgb 'cyan' title 'X L', "
+            "\"%s\" index 2 with lines lw 2 lc rgb 'red' title 'X R', "
+            "\"%s\" index 3 with lines lw 2 lc rgb 'green' title 'f(X)', "
+            "\"%s\" index 4 with lines lw 2 lc rgb 'blue' title 'f(X) L', "
+            "\"%s\" index 5 with lines lw 2 lc rgb 'yellow' title 'f(X) R'\n",
+    drawer.file, drawer.file, drawer.file, drawer.file, drawer.file, drawer.file);
 
     fprintf(drawer.gnuplot, "bind 'q' 'exit'\n");
     fprintf(drawer.gnuplot, "while (1) {\n");
@@ -47,7 +50,7 @@ static capd::LDVector Newton(capd::LDVector u, capd::LDPoincareMap map) {
     return u;
 }
 
-static capd::LDMatrix calcEigenVector(capd::LDVector u0, capd::LDPoincareMap map) {
+static capd::LDMatrix calcEigenVector(capd::LDVector u0, capd::LDPoincareMap map, capd::LDMap f) {
     capd::LDMatrix dPhi(N + 1, N + 1);
 
     capd::LDVector u1 = map(u0, dPhi);
@@ -60,76 +63,67 @@ static capd::LDMatrix calcEigenVector(capd::LDVector u0, capd::LDPoincareMap map
 
     capd::alglib::computeEigenvaluesAndEigenvectors(dP, eigRe, eigIm, vectRe, vectIm);
 
-    return capd::matrixAlgorithms::gaussInverseMatrix(vectRe) * dP * vectRe;
+    capd::LDMatrix Res(N + 1, N + 1);
+    capd::LDVector f_val = f(u0); 
+    for(size_t i = 0; i <= N; ++i) {
+        Res[i][0] = f_val[i];
+    }
+
+    size_t targetCol = 1;
+    for (size_t srcCol = 0; srcCol <= N; ++srcCol) {
+        if (srcCol != N - 1) {
+            for (size_t row = 0; row <= N; ++row) {
+                Res[row][targetCol] = vectRe[row][srcCol];
+            }
+            targetCol++;
+        }
+    }
+
+    return Res;
 }
 
-static void drawInitialRectangle(double side, struct gnuPlotManager *manager) {
-    manager->print(0, "{} {}\n", -side, -side);
-    manager->print(0, "{} {}\n", side, -side);
-    manager->print(0, "{} {}\n", side, side);
-    manager->print(0, "{} {}\n", -side, side);
-    manager->print(0, "{} {}\n", -side, -side);
+static void drawInitialRectangle(capd::IVector v, struct gnuPlotManager *manager) {
+    manager->print(0, "{} {}\n", v[1].leftBound(), v[2].leftBound());
+    manager->print(0, "{} {}\n", v[1].rightBound(), v[2].leftBound());
+    manager->print(0, "{} {}\n", v[1].rightBound(), v[2].rightBound());
+    manager->print(0, "{} {}\n", v[1].leftBound(), v[2].rightBound());
+    manager->print(0, "{} {}\n", v[1].leftBound(), v[2].leftBound());
 
     manager->print(0, "\n\n"); 
 }
 
-void drawEdgeL(double b0, double b1, double e0, double e1, capd::IMatrix A, struct gnuPlotManager *manager) {
-    capd::IVector v(N + 1);
-    capd::IVector img;
-
-    for (double t = 0; t <= 1.0; t += 0.01) {
-        v[0] = b0 + t * (e0 - b0);
-        v[1] = b1 + t * (e1 - b1);
-        
-        img = A * v;
-        manager->print(0, "{} {}\n", img[0].leftBound(), img[1].leftBound());
-    }
-};
-
-void drawEdgeR(double b0, double b1, double e0, double e1, capd::IMatrix A, struct gnuPlotManager *manager) {
-    capd::IVector v(N + 1);
-    capd::IVector img;
-
-    for (double t = 0; t <= 1.0; t += 0.01) {
-        v[0] = b0 + t * (e0 - b0);
-        v[1] = b1 + t * (e1 - b1);
-        
-        img = A * v;
-        manager->print(0, "{} {}\n", img[0].rightBound(), img[1].rightBound());
-    }
-};
-
-static void checkForCoveringRelationship(capd::LDVector u, capd::LDPoincareMap map, capd::IPoincareMap iMap, struct gnuPlotManager *manager, double side) {
+static void checkForCoveringRelationship(capd::LDVector u, capd::LDPoincareMap map, capd::IPoincareMap iMap, struct gnuPlotManager *manager, double side, capd::LDMap &f) {
     capd::LDVector fixed = Newton(u, map);
-    capd::LDMatrix A = calcEigenVector(fixed, map);
+    capd::LDMatrix Re = calcEigenVector(fixed, map, f);
 
     capd::IVector iFixed{fixed};
-    capd::IMatrix iA{A};
+    capd::IMatrix iRe{Re};
+
+    capd::IMatrix iRem = capd::matrixAlgorithms::gaussInverseMatrix(iRe);
 
     capd::IVector r(N + 1); {
-        r[0] = capd::Interval(0);
         for (size_t i = 1; i < N + 1; i += 1) {
             r[i] = capd::Interval(-side, side);
         }
     }
+    capd::IVector rL{r}; rL[1] = r[1].leftBound();
+    capd::IVector rR{r}; rR[1] = r[1].rightBound();
 
-    capd::C0Rect2Set x{iFixed, iA, r};
-    capd::C0Rect2Set fx = iMap(x);
+    capd::DInterval tt;
+    drawInitialRectangle(r, manager);
+    drawInitialRectangle(rL, manager);
+    drawInitialRectangle(rR, manager);
+    capd::C0Rect2Set x{iFixed, iRe, r};
+    capd::C0Rect2Set xL{iFixed, iRe, rL};
+    capd::C0Rect2Set xR{iFixed, iRe, rR};
 
-    capd::IMatrix B = fx.get_B();
-    capd::IMatrix pB = capd::matrixAlgorithms::gaussInverseMatrix(iA) * B;
-
-    drawEdgeL(-side, -side,  side, -side, pB, manager);
-    drawEdgeL( side, -side,  side,  side, pB, manager);
-    drawEdgeL( side,  side, -side,  side, pB, manager);
-    drawEdgeL(-side,  side, -side, -side, pB, manager);
-
-    manager->print(0, "\n\n");
-
-    drawEdgeR(-side, -side,  side, -side, pB, manager);
-    drawEdgeR( side, -side,  side,  side, pB, manager);
-    drawEdgeR( side,  side, -side,  side, pB, manager);
-    drawEdgeR(-side,  side, -side, -side, pB, manager);
+    capd::IVector fx = iMap(x, iFixed, iRem, tt); drawInitialRectangle(fx, manager);
+    capd::IVector fxL = iMap(xL, iFixed, iRem, tt); drawInitialRectangle(fxL, manager);
+    capd::IVector fxR = iMap(xR, iFixed, iRem, tt); drawInitialRectangle(fxR, manager);
+    COUT(r);
+    COUT(fx);
+    COUT(fxL);
+    COUT(fxR);
 }
 
 int main() {
@@ -161,7 +155,7 @@ int main() {
     capd::ICoordinateSection iSection{N + 1, 0, 0.6};
     capd::IPoincareMap iMap{iSolver, iSection, capd::poincare::MinusPlus};
 
-    double side = 10e-10;
+    double side = 10e-6;
     capd::LDVector u(N + 1); {
         for (auto &e : u) {
             e = 1.1; 
@@ -169,12 +163,10 @@ int main() {
         u[0] = 0.6; 
     }
 
-    drawInitialRectangle(side, &manager);
-
     // for (double n = 8.7; n < 9; n += 0.001) {
         f.setParameter(0, n);
         iF.setParameter(0, n);
-        checkForCoveringRelationship(u, map, iMap, &manager, side);
+        checkForCoveringRelationship(u, map, iMap, &manager, side, f);
 
         manager.fflush();
         manager.initGNUPlot();
