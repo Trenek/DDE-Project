@@ -96,31 +96,44 @@ static void checkForCoveringRelationship(capd::LDVector u, capd::LDPoincareMap m
     capd::LDVector fixed = Newton(u, map);
     capd::LDMatrix Re = calcEigenVector(fixed, map, f);
 
-    capd::IVector iFixed{fixed};
     capd::IMatrix iRe{Re};
-
     capd::IMatrix iRem = capd::matrixAlgorithms::gaussInverseMatrix(iRe);
+
+    capd::IVector iFixed{fixed};
+    capd::IVector iFixedL{fixed}; iFixedL -= (capd::IVector)iRe.column(1) * side;
+    capd::IVector iFixedR{fixed}; iFixedR += (capd::IVector)iRe.column(1) * side;
 
     capd::IVector r(N + 1); {
         for (size_t i = 1; i < N + 1; i += 1) {
             r[i] = capd::Interval(-side, side);
         }
     }
-    capd::IVector rL{r}; rL[1] = r[1].leftBound();
-    capd::IVector rR{r}; rR[1] = r[1].rightBound();
+    capd::IVector rL{r}; rL[1] = capd::Interval(-10e-10, 10e-10);
+    capd::IVector rR{r}; rR[1] = capd::Interval(-10e-10, 10e-10);
 
-    capd::DInterval tt;
     drawInitialRectangle(r, manager);
     drawInitialRectangle(rL, manager);
     drawInitialRectangle(rR, manager);
-    capd::C0Rect2Set x{iFixed, iRe, r};
-    capd::C0Rect2Set xL{iFixed, iRe, rL};
-    capd::C0Rect2Set xR{iFixed, iRe, rR};
-
-    capd::IVector fx = iMap(x, iFixed, iRem, tt); drawInitialRectangle(fx, manager);
-    capd::IVector fxL = iMap(xL, iFixed, iRem, tt); drawInitialRectangle(fxL, manager);
-    capd::IVector fxR = iMap(xR, iFixed, iRem, tt); drawInitialRectangle(fxR, manager);
+    COUT(iFixed);
+    COUT(iFixedL);
+    COUT(iFixedR);
     COUT(r);
+    COUT(rL);
+    COUT(rR);
+
+    capd::C0Rect2Set x{iFixed, iRe, r};
+    capd::C0Rect2Set xL{iFixedL, iRe, rL};
+    capd::C0Rect2Set xR{iFixedR, iRe, rR};
+
+    capd::DInterval tt;
+    // map.getSolver().setStep(0.01);
+    capd::IVector fx = iMap(x, iFixed, iRem, tt); drawInitialRectangle(fx, manager);
+    tt = 0;
+    // map.getSolver().setStep(0.01);
+    capd::IVector fxL = iMap(xL, iFixed, iRem, tt); drawInitialRectangle(fxL, manager);
+    tt = 0;
+    // map.getSolver().setStep(0.01);
+    capd::IVector fxR = iMap(xR, iFixed, iRem, tt); drawInitialRectangle(fxR, manager);
     COUT(fx);
     COUT(fxL);
     COUT(fxR);
