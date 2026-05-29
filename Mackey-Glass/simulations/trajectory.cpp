@@ -4,7 +4,7 @@
 #include "draw.hpp"
 
 #define N 5
-#define n 9
+#define n 8.97
 
 int main() {
     class gnuPlotManager manager{{
@@ -22,14 +22,10 @@ int main() {
         f.setParameter(0, n);
     }
     capd::LDOdeSolver solver{f, order}; {
-        solver.setStep(0.1);
+        solver.setStep(0.00001);
     }
 
-    capd::LDVector u(N + 1); {
-        for (auto &e : u) {
-            e = 0.5;
-        }
-    }
+    capd::LDVector u{0.6,0.5618695104336075,0.6204585444319234,0.7708628763257664,0.94131646849228,1.020675789800567};
 
     long double t = 0.0;
 

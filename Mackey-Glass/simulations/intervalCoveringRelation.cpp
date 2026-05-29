@@ -94,6 +94,8 @@ static void drawInitialRectangle(capd::IVector v, struct gnuPlotManager *manager
 
 static void checkForCoveringRelationship(capd::LDVector u, capd::LDPoincareMap map, capd::IPoincareMap iMap, struct gnuPlotManager *manager, double side, capd::LDMap &f) {
     capd::LDVector fixed = Newton(u, map);
+    std::cout.precision(16);
+    COUT(fixed);
     capd::LDMatrix Re = calcEigenVector(fixed, map, f);
 
     capd::IMatrix iRe{Re};
@@ -126,13 +128,14 @@ static void checkForCoveringRelationship(capd::LDVector u, capd::LDPoincareMap m
     capd::C0Rect2Set xR{iFixedR, iRe, rR};
 
     capd::DInterval tt;
-    // map.getSolver().setStep(0.01);
     capd::IVector fx = iMap(x, iFixed, iRem, tt); drawInitialRectangle(fx, manager);
+    
     tt = 0;
-    // map.getSolver().setStep(0.01);
+    std::cout << iMap.getSolver().getStep() << std::endl;
     capd::IVector fxL = iMap(xL, iFixed, iRem, tt); drawInitialRectangle(fxL, manager);
+
     tt = 0;
-    // map.getSolver().setStep(0.01);
+    std::cout << iMap.getSolver().getStep() << std::endl;
     capd::IVector fxR = iMap(xR, iFixed, iRem, tt); drawInitialRectangle(fxR, manager);
     COUT(fx);
     COUT(fxL);
@@ -152,7 +155,7 @@ int main() {
         },
     }};
 
-    constexpr double n = 8.7;
+    constexpr double n = 8.97;
     constexpr uint32_t order = 20;
     capd::LDMap f{mackeyGlass<N>, N + 1, N + 1, 1};
     capd::LDOdeSolver solver{f, order}; {
@@ -163,7 +166,7 @@ int main() {
 
     capd::IMap iF{mackeyGlass<N>, N + 1, N + 1, 1};
     capd::IOdeSolver iSolver{iF, order}; {
-        iSolver.setStep(0.01);
+        // iSolver.setStep(0.01);
     }
     capd::ICoordinateSection iSection{N + 1, 0, 0.6};
     capd::IPoincareMap iMap{iSolver, iSection, capd::poincare::MinusPlus};
