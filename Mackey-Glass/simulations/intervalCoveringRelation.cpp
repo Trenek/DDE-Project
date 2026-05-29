@@ -94,8 +94,6 @@ static void drawInitialRectangle(capd::IVector v, struct gnuPlotManager *manager
 
 static void checkForCoveringRelationship(capd::LDVector u, capd::LDPoincareMap map, capd::IPoincareMap iMap, struct gnuPlotManager *manager, double side, capd::LDMap &f) {
     capd::LDVector fixed = Newton(u, map);
-    std::cout.precision(16);
-    COUT(fixed);
     capd::LDMatrix Re = calcEigenVector(fixed, map, f);
 
     capd::IMatrix iRe{Re};
@@ -113,33 +111,17 @@ static void checkForCoveringRelationship(capd::LDVector u, capd::LDPoincareMap m
     capd::IVector rL{r}; rL[1] = capd::Interval(-10e-10, 10e-10);
     capd::IVector rR{r}; rR[1] = capd::Interval(-10e-10, 10e-10);
 
-    drawInitialRectangle(r, manager);
-    drawInitialRectangle(rL, manager);
-    drawInitialRectangle(rR, manager);
-    COUT(iFixed);
-    COUT(iFixedL);
-    COUT(iFixedR);
-    COUT(r);
-    COUT(rL);
-    COUT(rR);
-
     capd::C0Rect2Set x{iFixed, iRe, r};
     capd::C0Rect2Set xL{iFixedL, iRe, rL};
     capd::C0Rect2Set xR{iFixedR, iRe, rR};
-
     capd::DInterval tt;
-    capd::IVector fx = iMap(x, iFixed, iRem, tt); drawInitialRectangle(fx, manager);
-    
-    tt = 0;
-    std::cout << iMap.getSolver().getStep() << std::endl;
-    capd::IVector fxL = iMap(xL, iFixed, iRem, tt); drawInitialRectangle(fxL, manager);
 
-    tt = 0;
-    std::cout << iMap.getSolver().getStep() << std::endl;
+    drawInitialRectangle(r, manager);
+    drawInitialRectangle(iRem * (iFixedL - iFixed) + rL, manager);
+    drawInitialRectangle(iRem * (iFixedR - iFixed) + rR, manager);
+    capd::IVector fx = iMap(x, iFixed, iRem, tt); drawInitialRectangle(fx, manager);
+    capd::IVector fxL = iMap(xL, iFixed, iRem, tt); drawInitialRectangle(fxL, manager);
     capd::IVector fxR = iMap(xR, iFixed, iRem, tt); drawInitialRectangle(fxR, manager);
-    COUT(fx);
-    COUT(fxL);
-    COUT(fxR);
 }
 
 int main() {
@@ -165,9 +147,7 @@ int main() {
     capd::LDPoincareMap map{solver, section, capd::poincare::MinusPlus};
 
     capd::IMap iF{mackeyGlass<N>, N + 1, N + 1, 1};
-    capd::IOdeSolver iSolver{iF, order}; {
-        // iSolver.setStep(0.01);
-    }
+    capd::IOdeSolver iSolver{iF, order};
     capd::ICoordinateSection iSection{N + 1, 0, 0.6};
     capd::IPoincareMap iMap{iSolver, iSection, capd::poincare::MinusPlus};
 
@@ -179,14 +159,12 @@ int main() {
         u[0] = 0.6; 
     }
 
-    // for (double n = 8.7; n < 9; n += 0.001) {
-        f.setParameter(0, n);
-        iF.setParameter(0, n);
-        checkForCoveringRelationship(u, map, iMap, &manager, side, f);
+    f.setParameter(0, n);
+    iF.setParameter(0, n);
+    checkForCoveringRelationship(u, map, iMap, &manager, side, f);
 
-        manager.fflush();
-        manager.initGNUPlot();
-    // }
+    manager.fflush();
+    manager.initGNUPlot();
 
     return 0;
 }
